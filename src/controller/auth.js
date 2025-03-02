@@ -174,7 +174,7 @@ let User = {
           let result = await ResendEmail(htmlcontent,email,'Otp reset')
           console.log(result);
           if(result.data!=null){
-          res.json({ otp: otp, status: 200, details: user_id });
+          res.json({  status: 200});
       }
        else {
         res.json({ message:'something went wrong can not send otp on email' });
@@ -226,7 +226,7 @@ let User = {
             [user_id, otp]
           );
 
-          if (deletefromotpverify.rowCount) res.json({ data: response.rows[0] ,url:urlid});
+          if (deletefromotpverify.rowCount) res.json({url:urlid});
         }
       }
       else {
