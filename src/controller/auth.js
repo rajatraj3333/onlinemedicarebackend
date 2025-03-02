@@ -137,10 +137,10 @@ let User = {
     
     try {
       await pool.query('BEGIN')
-      let getuserid= await pool.query(`select user_id from users where email=$1`,[email])
-      console.log(getuserid);
-      if(!getuserid.rows.length){ res.json({message:'Email does not exists'}) 
-      return;
+      let getuserid= await pool.query(`select user_id from users where email ilike $1`,[email])
+      if(!getuserid.rows.length){
+         res.json({message:'Email does not exists'}) 
+         return;
       }
 
       else {
@@ -156,6 +156,7 @@ let User = {
          `,
         [user_id, "now()", otp]
       );
+      
       if (result.rowCount) {
         let insertintoaudittab = await pool.query(
           `insert into otpverifyaudit (user_id,created_at,otp)
@@ -163,6 +164,7 @@ let User = {
             `,
           [user_id, "now()", otp]
         );
+       
         if (insertintoaudittab.rowCount) {
 
           let getuseremail = await pool.query(`select name,email from users where user_id=$1`,[user_id])
@@ -198,9 +200,8 @@ let User = {
   async verifyotp(req, res) {
     let { otp,email } = req.body;
 
-     console.log('verify token')
     try {
-      let getuserid= await pool.query(`select user_id from users where email=$1`,[email])
+      let getuserid= await pool.query(`select user_id from users where email ilike $1`,[email])
       const { user_id } = getuserid.rows[0];
       console.log(user_id)
       if(user_id){
@@ -208,9 +209,11 @@ let User = {
       pool.query('BEGIN')
       let response = await pool.query(
         `select otp,user_id from otpverify where user_id=$1 and otp=$2`,
-        [user_id, otp]
+        [user_id, Number(otp)]
       );
+     
       if (response.rowCount) {
+       
         const { otp, user_id } = response.rows[0];
         const urlid = await uniqueuserid(2,10)
         let updatestatus = await pool.query(
@@ -222,6 +225,7 @@ let User = {
             `delete from otpverify where user_id=$1 and otp=$2`,
             [user_id, otp]
           );
+
           if (deletefromotpverify.rowCount) res.json({ data: response.rows[0] ,url:urlid});
         }
       }
