@@ -75,7 +75,9 @@ SELECT
     where p.doctor_id = $1
     `;
     let result = await pool.query(sqlStatement, [doctor_id]);
+  
     if (result.rowCount) res.json({ response: result.rows, status: 200 });
+    else { res.json({ response: "no booking available", status: 200 })};
   },
   async add(req, res) {},
   async getdoctorList(req, res) {
@@ -207,7 +209,7 @@ where p.booking_id =$1
        let emailTemplate =   BookingEmail({patientname,fullname,booking_date,slottime,booking_status,department})
      let result =  await ResendEmail(emailTemplate,'rajatkumar108@hotmail.com','Booking Details')
      console.log(result)
-     if(result.date!=null){
+     if(result.error==null){
       res.json({ response: "update successfully", status: 200 });
      }
         }

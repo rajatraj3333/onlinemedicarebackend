@@ -9,7 +9,7 @@ const ResendEmail = require("../emails/config");
 const Validation = require('../../utils/validator').userValidationSchema
 const userValidation = require('../../utils/validator.js').patientregister
 const dayjs =require('dayjs');
-const { response } = require("express");
+const { response, query } = require("express");
 let User = {
   async register(req, res) {
     let client = pool.connect();
@@ -119,6 +119,7 @@ let User = {
     try {
       if (token) {
         const jwtToken = jwt.verify(token, process.env.SEC_KEY);
+       
         req.user = jwtToken;
         next();
       } else {
@@ -296,14 +297,24 @@ let User = {
          }
        
   },
-  verify(req,res){
+async  verify(req,res){
     
          const {token}=req.body
          console.log(token,'verify')
     try {
       let jwtresponse=  jwt.verify(token,process.env.SEC_KEY);
-   console.log(jwtresponse);
-   res.json({message:'valid',status:200})
+      
+      if(jwtresponse.userid){
+           let sqlStatement  =  `select email,roles from users where user_id =$1`
+           let result = await pool.query(sqlStatement,[jwtresponse.userid])
+           console.log(result);
+          if(result.rowCount){
+            const {email,roles}=result.rows[0]  
+            const data = {token,email,roles}
+   res.json({response:data,status:200})
+          }
+      }
+  
     } catch (error) {
        res.json({error:'invalid authorization',status:401}) 
     }
@@ -438,6 +449,7 @@ let User = {
   },
   async getprofiledetails(req,res){
     const {userid}=req.user
+   
     
   try {
     let getprofilesql = `select name,fullname,email from users where user_id =$1`
@@ -458,10 +470,10 @@ let User = {
        let updatesql = `update users set name=$1, fullname=$2, email=$3 where user_id=$4 `
        let updateresult = await pool.query(updatesql,[email,fullname,email,userid])
        if(updateresult.rowCount){
-        res.json({response:'successfully updated'})
+        res.json({response:'successfully updated',status:200})
        }
        else {
-        res.json({response:'can not  update right now'})
+        res.json({response:'can not  update right now',status:500})
        }
     } catch (error) {
       console.log(error);
