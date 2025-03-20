@@ -255,10 +255,12 @@ let User = {
      
          try {
          await pool.query('BEGIN')
-         let getuserid= await pool.query(`select user_id from users where email=$1`,[email])
+        
+         let getuserid= await pool.query(`select user_id from users where email ilike $1`,[email])
+        
          const { user_id } = getuserid.rows[0];
          console.log(user_id)
-         if(user_id){
+         if(user_id){ 
             
 
          let result =await pool.query(`select url,otp from otpverifyaudit where url=$1 and status IS NULL or status=$2`,[url,'notused']);
@@ -415,7 +417,7 @@ async  verify(req,res){
         let uniqueId = await uniqueuserid(2, 8);
         // console.log(`${salt}:${hashedpassword}`);
         hashedpassword = `${salt}:${hashedpassword}`;
-
+ 
 
         let userResult = await pool.query(
           `insert into users (user_id,name,fullname,email,roles,password,created_at)
