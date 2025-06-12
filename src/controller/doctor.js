@@ -15,7 +15,7 @@ const Doctor = {
     let time = dayjs(date).subtract(1, "D");
     console.log(time.format("DD-MM-YYYY"), date); 
     const booking_id = await bookingID(3, 9);
-    const getemailsql = `select user_id from users where email =$1`;
+    const getemailsql = `select user_id from users where email ilike $1`;
     const getemail = await pool.query(getemailsql, [email]);
     console.log(getemail,'EMAIL');
     const { user_id } = getemail.rows[0];
@@ -64,7 +64,7 @@ const Doctor = {
     const doctor_id = req.user.userid;
     console.log(req.user, "USERS", doctor_id);
     let sqlStatement = `
-SELECT 
+   SELECT 
    u1.user_id ,u1.fullname,
     d.doctor_id  as doctor_id,
     p.* as pdetails
@@ -148,12 +148,19 @@ inner join doctor d  on u.user_id = d.user_id
       console.log(err);
     }
   },
-  async getbookedslottime(req, res) {
+  async getbookedslottime(req, res) { 
     const { date, doctor_id } = req.body;
-    console.log(date);
-    let getbookedslottimesql = `select slottime from patient where to_char(booking_date,'DD-MM-YYYY')=$1 and doctor_id=$2`;
+    
+    let formatteddate =date.split('/') ;
+    let formatedday =  formatteddate.length && formatteddate[0]?.length<2?+"0"+formatteddate[0]:formatteddate[0]
+    let formatedmonth = formatteddate.length && formatteddate[1]?.length<2?+"0"+formatteddate[1]:formatteddate[1]
+    let formattedyear = formatteddate.length  && formatteddate[2]
+    let afterformated =  `${formatedday}-${formatedmonth}-${formattedyear}`
+
+    let getbookedslottimesql = `select slottime from patient where to_char(booking_date,'DD-MM-YYYY')=$1 and doctor_id=$2 and (booking_status  in ('approved','rejected') or booking_status is null)  `;
+    
     let getbookedslottimes = await pool.query(getbookedslottimesql, [
-      date,
+      afterformated,
       doctor_id,
     ]);
     console.log(getbookedslottimes);
@@ -240,24 +247,60 @@ order by  booking_date desc
     } catch (error) {}
   },
   async cancelappointment(req, res) {
-    const { booking_id } = req.body;
+    const { booking_id ,date} = req.body;
+
+    let todayday =+date?.split('/')[0]
+    let todaymonth =+date?.split('/')[1]
+   let todayyear =  +date?.split('/')[2]
+
 
     try {
       const { userid } = req.user;
 
+
+      // match the date from  given date
+
+      let statement1 = `select booking_date from patient where booking_id = $1`
+
+        let result = await pool.query(statement1,[booking_id])
+       if(result.rowCount){
+          let data = result.rows[0].booking_date
+ 
+         let extractdate = new Date(data).toLocaleDateString().split('/');
+
+         let day = +extractdate[0]
+         let month = +extractdate[1]
+         let year = +extractdate[2]
+
+let differenceInDays = 0;
+
+if(month===todaymonth){
+  if(todayday>=day){
+        res.status(200).json({ error: "booking can not cancelled" });
+        return
+}
+}
+if(Math.max(todaymonth,month)-Math.min(todaymonth,month)>1){
+        res.status(200).json({ error: "booking can not cancelled" });
+        return
+}
+
+          
+        
       let updatestatussql = `update patient set booking_status =$1 where booking_id=$2
       returning booking_id
       `;
 
       let updateresult = pool.query(updatestatussql, ["cancelled", booking_id]);
-
-      if ((await updateresult).rowCount) {
-        res.status(200).json({ response: "successfully updated" });
-      } else {
-        res.status(400).json({ error: "can not updated write now" });
+   if ((await updateresult).rowCount) {
+        res.status(200).json({ response: "booking  cancelled" });
+      }
+    }
+      else {
+        res.status(400).json({ error: "booking can not cancelled " });
       }
     } catch (error) {
-      res.status(500).json({ error: "can not updated write now" });
+      res.status(500).json({ error: "some thing went wrong" });
     }
   },
 

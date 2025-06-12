@@ -40,7 +40,7 @@ let User = {
         [email]
       );
       if (result.rowCount) {
-        res.json({ message: `user ${result.rows[0].email} already exits` });
+        res.json({ error: `user ${result.rows[0].email} already exits` });
         return;
       }
 
@@ -69,11 +69,11 @@ let User = {
       console.log(jwt.verify(token, process.env.SEC_KEY));
       res.json({ response: userResult.rows, token: token, status: 200 });
     } catch (error) {
-      await pool.query('ROLLBACK')
+      await pool.query('ROLLBACK') 
         console.log(error);
         if(error.details!=undefined && error.details.length){
           res.json({error: error.details.map(item=>item.message)+""})
-         }
+         } 
      
     } 
     // await pool.release();
@@ -105,7 +105,7 @@ let User = {
         expiresIn: "1h",
       });
       console.log(jwttoken);
-      res.json({ token: jwttoken,roles:roles });
+      res.json({ token: jwttoken,roles:roles,email:email });
       console.log(match);
     } else {
       res.json({ error: "password did not match" });

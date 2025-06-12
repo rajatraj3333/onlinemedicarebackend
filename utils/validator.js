@@ -93,7 +93,7 @@ email: Joi.string()
     }),
 
 password: Joi.string()
-    .min(8)
+    .min(5)
     .max(50)
     .required()
     .messages({
