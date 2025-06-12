@@ -12,8 +12,16 @@ const Doctor = {
     console.log("booking");
     console.log(req.body, req.user);
     const { slottime, doctor_id, payment_status, email, date, mode } = req.body;
-    let time = dayjs(date).subtract(1, "D");
-    console.log(time.format("DD-MM-YYYY"), date); 
+    // let time = dayjs(date).subtract(1, "D");
+    // console.log(time.format("DD-MM-YYYY"), date);
+
+
+       let formatteddate =date.split('/') ;
+    let formatedday =  formatteddate.length && formatteddate[0]?.length<2?+"0"+formatteddate[0]:formatteddate[0]
+    let formatedmonth = formatteddate.length && formatteddate[1]?.length<2?+"0"+formatteddate[1]:formatteddate[1]
+    let formattedyear = formatteddate.length  && formatteddate[2]
+    let afterformated =  `${formatedday}-${formatedmonth}-${formattedyear}`
+
     const booking_id = await bookingID(3, 9);
     const getemailsql = `select user_id from users where email ilike $1`;
     const getemail = await pool.query(getemailsql, [email]);
@@ -23,7 +31,7 @@ const Doctor = {
       let checkbookingalreadysql = `select user_id from patient where to_char(booking_date,'DD-MM-YYYY')=$1 and doctor_id=$2 and user_id=$3`;
 
       let checkbookingalready = await pool.query(checkbookingalreadysql, [
-        time.format("DD-MM-YYYY"),
+        afterformated,
         doctor_id,
         user_id,
       ]);
@@ -49,7 +57,7 @@ const Doctor = {
           payment_status,
           booking_id,
           "now()",
-          date,
+          afterformated,
           mode,
         ]);
         if (result.rowCount){
