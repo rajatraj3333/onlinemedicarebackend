@@ -10,18 +10,20 @@ const ResendEmail = require("../emails/config");
 const Doctor = {
   async booking(req, res) { 
     console.log("booking");
-    console.log(req.body, req.user);
+    // console.log(req.body, req.user);
     const { slottime, doctor_id, payment_status, email, date, mode } = req.body;
     // let time = dayjs(date).subtract(1, "D");
     // console.log(time.format("DD-MM-YYYY"), date);
 
 
-       let formatteddate =date.split('/') ;
-    let formatedday =  formatteddate.length && formatteddate[0]?.length<2?+"0"+formatteddate[0]:formatteddate[0]
-    let formatedmonth = formatteddate.length && formatteddate[1]?.length<2?+"0"+formatteddate[1]:formatteddate[1]
-    let formattedyear = formatteddate.length  && formatteddate[2]
-    let afterformated =  `${formatedday}-${formatedmonth}-${formattedyear}`
+    //    let formatteddate =date.split('/') ;
+    // let formatedday =  formatteddate.length && formatteddate[0]?.length<2?+"0"+formatteddate[0]:formatteddate[0]
+    // let formatedmonth = formatteddate.length && formatteddate[1]?.length<2?+"0"+formatteddate[1]:formatteddate[1]
+    // let formattedyear = formatteddate.length  && formatteddate[2]
+    // // let afterformated =  `${formatedday}-${formatedmonth}-${formattedyear}`
+    // let afterformated =  new Date(formattedyear,formatedmonth-1,formatedday+1).toISOString()
 
+    // console.log(afterformated,"AFTER")
     const booking_id = await bookingID(3, 9);
     const getemailsql = `select user_id from users where email ilike $1`;
     const getemail = await pool.query(getemailsql, [email]);
@@ -31,12 +33,12 @@ const Doctor = {
       let checkbookingalreadysql = `select user_id from patient where to_char(booking_date,'DD-MM-YYYY')=$1 and doctor_id=$2 and user_id=$3`;
 
       let checkbookingalready = await pool.query(checkbookingalreadysql, [
-        afterformated,
+        date,
         doctor_id,
         user_id,
       ]);
 
-      console.log(checkbookingalready.rows);
+      // console.log(checkbookingalready.rows);
       if (checkbookingalready.rowCount) {
         res.json({
           error: "booking already present on this day ",
@@ -48,7 +50,7 @@ const Doctor = {
         insert into patient (patient_id,slottime,user_id,doctor_id,payment_status,booking_id,created_at,booking_date,mode)
                     values ($1,$2,$3,$4,$5,$6,$7,$8,$9)
         `;
-        console.log(sqlStatement); 
+        // console.log(sqlStatement); 
         let result = await pool.query(sqlStatement, [
           user_id,
           slottime,
@@ -57,7 +59,7 @@ const Doctor = {
           payment_status,
           booking_id,
           "now()",
-          afterformated,
+          date,
           mode,
         ]);
         if (result.rowCount){
@@ -65,7 +67,7 @@ const Doctor = {
     
         }
       }
-      console.log(booking_id);
+      // console.log(booking_id);
     }
   },
   async getBookingDetails(req, res) {
@@ -159,12 +161,14 @@ inner join doctor d  on u.user_id = d.user_id
   async getbookedslottime(req, res) { 
     const { date, doctor_id } = req.body;
     
-    let formatteddate =date.split('/') ;
-    let formatedday =  formatteddate.length && formatteddate[0]?.length<2?+"0"+formatteddate[0]:formatteddate[0]
+    let formatteddate =date.split('T')[0].split('-') ;
+    
+    let formatedday =  formatteddate.length && formatteddate[2]?.length<2?+"0"+formatteddate[2]:formatteddate[2]
     let formatedmonth = formatteddate.length && formatteddate[1]?.length<2?+"0"+formatteddate[1]:formatteddate[1]
-    let formattedyear = formatteddate.length  && formatteddate[2]
+    let formattedyear = formatteddate.length  && formatteddate[0]
     let afterformated =  `${formatedday}-${formatedmonth}-${formattedyear}`
 
+   
     let getbookedslottimesql = `select slottime from patient where to_char(booking_date,'DD-MM-YYYY')=$1 and doctor_id=$2 and (booking_status  in ('approved','rejected') or booking_status is null)  `;
     
     let getbookedslottimes = await pool.query(getbookedslottimesql, [
