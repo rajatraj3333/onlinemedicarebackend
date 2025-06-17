@@ -7,14 +7,14 @@ const { error } = require("../../utils/validator");
 const BookingEmail = require("../emails/bookingstatusemail");
 const { Resend } = require("resend");
 const ResendEmail = require("../emails/config");
+const generateNumber = require("../../utils/uniquegen");
 const Doctor = {
-  async booking(req, res) { 
+  async booking(req, res) {
     console.log("booking");
     // console.log(req.body, req.user);
     const { slottime, doctor_id, payment_status, email, date, mode } = req.body;
     // let time = dayjs(date).subtract(1, "D");
     // console.log(time.format("DD-MM-YYYY"), date);
-
 
     //    let formatteddate =date.split('/') ;
     // let formatedday =  formatteddate.length && formatteddate[0]?.length<2?+"0"+formatteddate[0]:formatteddate[0]
@@ -50,7 +50,7 @@ const Doctor = {
         insert into patient (patient_id,slottime,user_id,doctor_id,payment_status,booking_id,created_at,booking_date,mode)
                     values ($1,$2,$3,$4,$5,$6,$7,$8,$9)
         `;
-        // console.log(sqlStatement); 
+        // console.log(sqlStatement);
         let result = await pool.query(sqlStatement, [
           user_id,
           slottime,
@@ -62,9 +62,8 @@ const Doctor = {
           date,
           mode,
         ]);
-        if (result.rowCount){
+        if (result.rowCount) {
           res.json({ response: "booking done!!", status: 200 });
-    
         }
       }
       // console.log(booking_id);
@@ -85,14 +84,16 @@ const Doctor = {
     where p.doctor_id = $1
     `;
     let result = await pool.query(sqlStatement, [doctor_id]);
-  
+
     if (result.rowCount) res.json({ response: result.rows, status: 200 });
-    else { res.json({ response: "no booking available", status: 200 })};
+    else {
+      res.json({ response: "no booking available", status: 200 });
+    }
   },
   async add(req, res) {},
   async getdoctorList(req, res) {
     const doctor_id = req.user.userid;
-   console.log(doctor_id,'line 82');
+   
     //  getting doctor id of users
 
     let getrolessql = `select roles from users where user_id=$1`;
@@ -111,7 +112,7 @@ select  doctor_id from doctor d  where
 d.user_id = $1
 )
       `;
-      let getallassociate = await pool.query(getallassociatesql,[doctor_id])
+      let getallassociate = await pool.query(getallassociatesql, [doctor_id]);
       res.json({ response: getallassociate.rows });
       return;
     }
@@ -124,7 +125,7 @@ inner join doctor d  on u.user_id = d.user_id
  order by u.id asc
  `;
     let result = await pool.query(sqlStatement, [doctor_id]);
-    console.log(result, "getdoctorlist"); 
+    console.log(result, "getdoctorlist");
     res.json({ response: result.rows });
   },
   async udatedoctorDetails(req, res) {
@@ -158,19 +159,24 @@ inner join doctor d  on u.user_id = d.user_id
       console.log(err);
     }
   },
-  async getbookedslottime(req, res) { 
+  async getbookedslottime(req, res) {
     const { date, doctor_id } = req.body;
-    
-    let formatteddate =date.split('T')[0].split('-') ;
-    
-    let formatedday =  formatteddate.length && formatteddate[2]?.length<2?+"0"+formatteddate[2]:formatteddate[2]
-    let formatedmonth = formatteddate.length && formatteddate[1]?.length<2?+"0"+formatteddate[1]:formatteddate[1]
-    let formattedyear = formatteddate.length  && formatteddate[0]
-    let afterformated =  `${formatedday}-${formatedmonth}-${formattedyear}`
 
-   
+    let formatteddate = date.split("T")[0].split("-");
+
+    let formatedday =
+      formatteddate.length && formatteddate[2]?.length < 2
+        ? +"0" + formatteddate[2]
+        : formatteddate[2];
+    let formatedmonth =
+      formatteddate.length && formatteddate[1]?.length < 2
+        ? +"0" + formatteddate[1]
+        : formatteddate[1];
+    let formattedyear = formatteddate.length && formatteddate[0];
+    let afterformated = `${formatedday}-${formatedmonth}-${formattedyear}`;
+
     let getbookedslottimesql = `select slottime from patient where to_char(booking_date,'DD-MM-YYYY')=$1 and doctor_id=$2 and (booking_status  in ('approved','rejected') or booking_status is null)  `;
-    
+
     let getbookedslottimes = await pool.query(getbookedslottimesql, [
       afterformated,
       doctor_id,
@@ -193,7 +199,7 @@ inner join doctor d  on u.user_id = d.user_id
     if (alldoctor.rowCount) {
       res.json({ response: alldoctor.rows });
     }
-  }, 
+  },
   async bookingstatus(req, res) {
     const { booking_id, status } = req.body;
     console.log(req.body);
@@ -209,8 +215,7 @@ inner join doctor d  on u.user_id = d.user_id
 
       console.log(bookingstatus);
       if (bookingstatus.rowCount) {
-     
-        let getbookingdetailsSql= `
+        let getbookingdetailsSql = `
 select  
 p.booking_status,p.slottime,p.user_id,p.doctor_id,p.booking_date, 
 u.user_id, u."name" as patientname,u.email as patientemail ,
@@ -221,20 +226,41 @@ on u.user_id =p.user_id
 inner join doctor d 
 on d.user_id =p.doctor_id 
 where p.booking_id =$1
-        ` 
-        let getbookdeatils = await pool.query(getbookingdetailsSql,[booking_id])
-        if(getbookdeatils.rows){
-          let {booking_status,slottime,patientname,fullname,department,booking_date,patientemail} =  getbookdeatils.rows[0]
-       let emailTemplate =   BookingEmail({patientname,fullname,booking_date,slottime,booking_status,department})
-     let result =  await ResendEmail(emailTemplate,'rajatkumar108@hotmail.com','Booking Details')
-     console.log(result)
-     if(result.error==null){
-      res.json({ response: "update successfully", status: 200 });
-     }
+        `;
+        let getbookdeatils = await pool.query(getbookingdetailsSql, [
+          booking_id,
+        ]);
+        if (getbookdeatils.rows) {
+          let {
+            booking_status,
+            slottime,
+            patientname,
+            fullname,
+            department,
+            booking_date,
+            patientemail,
+          } = getbookdeatils.rows[0];
+          let emailTemplate = BookingEmail({
+            patientname,
+            fullname,
+            booking_date,
+            slottime,
+            booking_status,
+            department,
+          });
+          let result = await ResendEmail(
+            emailTemplate,
+            "rajatkumar108@hotmail.com",
+            "Booking Details"
+          );
+          console.log(result);
+          if (result.error == null) {
+            res.json({ response: "update successfully", status: 200 });
+          }
         }
       }
     } catch (error) {
-      await pool.query('ROLLBACK')
+      await pool.query("ROLLBACK");
       console.log(error);
       res.json({ error: "update failed!", status: 500 });
     }
@@ -259,56 +285,54 @@ order by  booking_date desc
     } catch (error) {}
   },
   async cancelappointment(req, res) {
-    const { booking_id ,date} = req.body;
+    const { booking_id, date } = req.body;
 
-    let todayday =+date?.split('/')[0]
-    let todaymonth =+date?.split('/')[1]
-   let todayyear =  +date?.split('/')[2]
-
+    let todayday = +date?.split("/")[0];
+    let todaymonth = +date?.split("/")[1];
+    let todayyear = +date?.split("/")[2];
 
     try {
       const { userid } = req.user;
 
-
       // match the date from  given date
 
-      let statement1 = `select booking_date from patient where booking_id = $1`
+      let statement1 = `select booking_date from patient where booking_id = $1`;
 
-        let result = await pool.query(statement1,[booking_id])
-       if(result.rowCount){
-          let data = result.rows[0].booking_date
- 
-         let extractdate = new Date(data).toLocaleDateString().split('/');
+      let result = await pool.query(statement1, [booking_id]);
+      if (result.rowCount) {
+        let data = result.rows[0].booking_date;
 
-         let day = +extractdate[0]
-         let month = +extractdate[1]
-         let year = +extractdate[2]
+        let extractdate = new Date(data).toLocaleDateString().split("/");
 
-let differenceInDays = 0;
+        let day = +extractdate[0];
+        let month = +extractdate[1];
+        let year = +extractdate[2];
 
-if(month===todaymonth){
-  if(todayday>=day){
-        res.status(200).json({ error: "booking can not cancelled" });
-        return
-}
-}
-if(Math.max(todaymonth,month)-Math.min(todaymonth,month)>1){
-        res.status(200).json({ error: "booking can not cancelled" });
-        return
-}
+        let differenceInDays = 0;
 
-          
-        
-      let updatestatussql = `update patient set booking_status =$1 where booking_id=$2
+        if (month === todaymonth) {
+          if (todayday >= day) {
+            res.status(200).json({ error: "booking can not cancelled" });
+            return;
+          }
+        }
+        if (Math.max(todaymonth, month) - Math.min(todaymonth, month) > 1) {
+          res.status(200).json({ error: "booking can not cancelled" });
+          return;
+        }
+
+        let updatestatussql = `update patient set booking_status =$1 where booking_id=$2
       returning booking_id
       `;
 
-      let updateresult = pool.query(updatestatussql, ["cancelled", booking_id]);
-   if ((await updateresult).rowCount) {
-        res.status(200).json({ response: "booking  cancelled" });
-      }
-    }
-      else {
+        let updateresult = pool.query(updatestatussql, [
+          "cancelled",
+          booking_id,
+        ]);
+        if ((await updateresult).rowCount) {
+          res.status(200).json({ response: "booking  cancelled" });
+        }
+      } else {
         res.status(400).json({ error: "booking can not cancelled " });
       }
     } catch (error) {
@@ -316,22 +340,138 @@ if(Math.max(todaymonth,month)-Math.min(todaymonth,month)>1){
     }
   },
 
-  async getdoctordetails(req,res){
-         const {doctor_id}=req.body
-     try {
-      let doctordetailssql=`select * from doctor where user_id =$1`
-      let docotortableresult = await pool.query(doctordetailssql,[doctor_id])
-      if(docotortableresult.rows){
-        res.status(200).json({response:docotortableresult.rows[0]})
+  async getdoctordetails(req, res) {
+    const { doctor_id } = req.body;
+    try {
+      let doctordetailssql = `select * from doctor where user_id =$1`;
+      let docotortableresult = await pool.query(doctordetailssql, [doctor_id]);
+      if (docotortableresult.rows) {
+        res.status(200).json({ response: docotortableresult.rows[0] });
+      } else {
+        res.status(401).json({ error: "unauthorized access" });
       }
-      else {
-        res.status(401).json({error:'unauthorized access'})
-      }
-     } catch (error) {
-      res.status(500).json({error:'unauthorized access'})
-     }
-  }
+    } catch (error) {
+      res.status(500).json({ error: "unauthorized access" });
+    }
+  },
+  async addhospital(req, res) {
+    try {
+      const uniqueid =await generateNumber(6, 8);
+      const {
+        hospitalname,
+        hospitalselectedname,
+        hospitaladdress,
+        hospitalnumber,
+        hospitalnoemployee,
+        
+      } = req.body;
+   const doctor_id = req.user.userid;
+ 
 
+      let t= pool; 
+
+      await t.query('begin');  
+      const sqlStatement = `
+      insert into clinic (clinic_id,clinic_name,clinic_address,clinic_phone,clinic_employee_no)
+      values ($1,$2,$3,$4,$5); 
+      `;
+
+      let result = await t.query(sqlStatement, [
+        uniqueid,
+        hospitalname || hospitalselectedname,
+        hospitaladdress,
+        hospitalnumber,
+        hospitalnoemployee,
+       
+      ]);
+console.log(result);
+      if (result.rowCount) {
+        const sqlStatement =  `update doctor set clinic_id =$1 where doctor_id= $2;`
+
+        console.log(uniqueid,doctor_id)
+        let updateresult = await t.query(sqlStatement,[uniqueid,doctor_id]) 
+
+        console.log(updateresult,'UPDATE')
+        if(updateresult.rowCount){
+
+          await t.query('commit'); 
+          res.status(200).json({ response: "successfully created" });
+        } 
+        else {
+          await t.query('rollback');
+           res.status(200).json({ response: "cannot update right now" });
+        }
+      }
+    } catch (error) {
+      console.log(error)
+      res.status(200).json({ error: "can not create right now" });
+    }
+  },
+
+  async fetchhospital(req, res) {
+    try {
+      const { id, type } = req.body;
+      if (type === "byname") {
+        const sqlStatement = `select * from clinic where clinic_id =$1`;
+        let result = await pool.query(sqlStatement, [id]);
+        if (result.rows) {
+          result = result.rows[0];
+          res.status(200).json({ response: result });
+        }
+        else {
+            res.json({ error: "no data available " });
+        }
+      } else if (type === "allname") {
+        const sqlStatement = `select clinic_id,clinic_name from clinic;`;
+        let result = await pool.query(sqlStatement);
+        if (result.rows) {
+          result = result.rows;
+          res.status(200).json({ response: result });
+        } 
+      } else {
+        res.status(401).json({ error: "your  request is not  valid " });
+      }
+    } catch (error) {} 
+  },
+  async updatehospital(req,res) {
+    try {
+      const {
+        id,
+        hospitalname,
+        hospitaladdress,
+        hospitalnumber,
+        hospitalnoemployee,
+      } = req.body;
+
+      console.log(req.body, 'UPDATE HOSPITAL')
+      const sqlStatement = `update clinic set  clinic_name=$1,clinic_address=$2,clinic_phone=$3,clinic_employee_no=$4
+                            where clinic_id=$5      
+                            `;
+         let result = await pool.query(sqlStatement,[  hospitalname,
+        hospitaladdress,
+        hospitalnumber,
+        hospitalnoemployee,
+         id 
+      ])
+      console.log('RESULT',result); 
+      if(result.rowCount){
+          res.status(200).json({ response: "successfully updated" });
+      }                   
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "can not update right now" });
+    }
+  },
+
+  async noofemployee(req,res){
+      try {
+        const sqlStatement = `(select clinic_name,count(clinic_name)
+                              group by clinic_name
+                              `
+      } catch (error) {
+        
+      }
+  }
 };
 
 module.exports = Doctor;

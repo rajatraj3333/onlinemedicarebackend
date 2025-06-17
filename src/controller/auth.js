@@ -10,6 +10,7 @@ const Validation = require('../../utils/validator').userValidationSchema
 const userValidation = require('../../utils/validator.js').patientregister
 const dayjs =require('dayjs');
 const { response, query } = require("express");
+const { func } = require("joi");
 let User = {
   async register(req, res) {
     let client = pool.connect();
@@ -104,7 +105,12 @@ let User = {
       const jwttoken = jwt.sign({ userid: userid }, process.env.SEC_KEY, {
         expiresIn: "1h",
       });
-      console.log(jwttoken);
+      console.log(jwttoken,'JWT TOKEN');
+      console.log(req.session)
+      if(jwttoken){
+        req.session.userID = jwttoken;
+      }
+      req.user= jwttoken
       res.json({ token: jwttoken,roles:roles,email:email });
       console.log(match);
     } else {
@@ -115,20 +121,30 @@ let User = {
     // console.log(req);
     const token = req.header("X-Authorization");
     console.log(token, "token");
-
-    try {
-      if (token) {
-        const jwtToken = jwt.verify(token, process.env.SEC_KEY);
-       
-        req.user = jwtToken;
+    if(req.session.userID || token){
+    jwt.verify(token || req.session.userID, process.env.SEC_KEY, (err, decoded) => {
+      try {
+        if(req.session.userID){
+        req.user=decoded;
+        // req.session.userID = decoded.userid;
+        console.log("sessionID", req.session.userID);
         next();
-      } else {
+        }
+       else { 
         res.json({ error: "Invalid authorization", status: "401" });
-      }
-    } catch (err) {
-      console.log(err);
-      res.json({ error: "Invalid authorization", status: "401" });
+        return;
+        }
+
+      } catch (err) {
+        console.log(err);
+        res.json({ error: "Invalid authorization", status: "401" });
     }
+  })
+}
+  else { 
+        res.json({ error: "Invalid authorization", status: "401" });
+        return;
+        }
   },
   async generateotp(req, res) {
     console.log(req.body);
@@ -172,10 +188,11 @@ let User = {
           if(getuseremail.rowCount){
            const {name,email} =getuseremail.rows[0]
           let htmlcontent= SENDOTPHTML({name,otp})
+         
           let result = await ResendEmail(htmlcontent,email,'Otp reset')
+   
           console.log(result);
           if(result.data!=null){
-          res.json({  status: 200});
       }
        else {
         res.json({ message:'something went wrong can not send otp on email' });
@@ -355,13 +372,13 @@ async  verify(req,res){
                  let response = await pool.query(registration,[user_id,name,fullname,email,hashedpassword,'now()',roles])
         
                   if(response.rowCount){
-                    const token = jwt.sign({ userid:user_id }, process.env.SEC_KEY, {
+                     const token = jwt.sign({ userid:user_id }, process.env.SEC_KEY, {
                       expiresIn: "1h",
                     });
                     let docotortablesql = `insert into doctor (doctor_id,user_id,name,fullname,department) values($1,$2,$3,$4,$5)`
                     let saveresponse = await pool.query(docotortablesql,[user_id,user_id,name,fullname,department])
                     if(saveresponse.rowCount)  res.json({message:'successfully added',status:200,token:token})
-                  }
+                  } 
                   await pool.query('COMMIT')
       } catch (error) {
         console.log(error); 
@@ -451,7 +468,7 @@ async  verify(req,res){
   },
   async getprofiledetails(req,res){
     const {userid}=req.user
-   
+   console.log(req.session)
     
   try {
     let getprofilesql = `select name,fullname,email from users where user_id =$1`
@@ -480,7 +497,21 @@ async  verify(req,res){
     } catch (error) {
       console.log(error);
     }
-  }
+  },
+  logout: function (req, res) {
+    // console.log(req.session);
+    if (req.session.userID) {
+      req.session.destroy((err) => {
+        if (err) {
+          return res.json({ error: "Logout failed", status: 500 });
+        }
+        res.json({ message: "Logout successful", status: 200 });
+      });
+    } else {
+      res.json({ error: "No active session found", status: 401 });
+    }
+  },
+
 
 
 };

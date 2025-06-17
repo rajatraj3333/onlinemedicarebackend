@@ -8,6 +8,10 @@ const bookingDetails = require('../controller/doctor').getBookingDetails
 const getdoclist = require('../controller/doctor').getdoctorList
 const updatedoctorlist = require('../controller/doctor').udatedoctorDetails
 const bookedslottime = require('../controller/doctor').getbookedslottime
+const addhospital = require('../controller/doctor').addhospital
+const fetchhospital = require('../controller/doctor').fetchhospital
+const updatehospital = require('../controller/doctor').updatehospital
+
 
 // Route 
 router.get('/add',auth,create);
@@ -21,4 +25,10 @@ router.post('/getdoctordetails',auth,getdoctordetails)
 router.post('/bookingstatus',auth,bookingstatus)
 router.get('/getpatientdetails',auth,patientdetails)
 router.post('/cancelappointment',auth,cancelappointment)
-module.exports=router;
+router.post('/addnewhospital',auth,addhospital)
+router.post('/fetchhospital',fetchhospital)
+router.put('/updatehospital',auth,updatehospital)
+// router.get('/noofemployee',auth,noofemployee)
+
+module.exports=router; 
+  

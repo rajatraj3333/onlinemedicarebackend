@@ -11,5 +11,6 @@ router.post('/adddoctor',User.adddoctor)
 router.post('/addemployee',User.auth,User.adddoctoremployee)
 router.get('/getprofile',User.auth,User.getprofiledetails)
 router.post('/profileupdate',User.auth,User.updateprofile)
-
+router.get('/logout',User.logout)
+router.get('/verify',User.auth);
 module.exports=router;
