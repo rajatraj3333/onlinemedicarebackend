@@ -13,12 +13,12 @@ const cokkieparser = require('cookie-parser');
 const  pgSession = require('connect-pg-simple')(session);
 const port = process.env.PORT || 5000;
 dotenv.config();
-app.use(cors({
-  origin: 'https://onlinemedicares.netlify.app/', // frontend URL
-  credentials: true   
-   
-               // allow cookies to be sent
-})); 
+const isProduction = process.env.NODE_ENV === 'production';
+
+
+
+
+
 app.use(express.json());
 app.use(cokkieparser());
 
@@ -27,42 +27,36 @@ const pgPool = new Pool({
     connectionString: process.env.DATABASE_URL,
 });
 
-app.use( 
-  session({
-   secret: process.env.SESSION_SECRET,
 
-    // resave: false,
-    resave: false, 
-    
-    saveUninitialized: true,
-    cookie: { secure: true ,sameSite:'none'},
-    store: new pgSession({
+app.use(cors({
+  origin: isProduction 
+    ? ['https://onlinemedicares.netlify.app', 'https://www.onlinemedicares.netlify.app']
+    : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  credentials: true
+}));
+
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: isProduction, // true in production, false in development
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000,
+    sameSite: isProduction ? 'none' : 'lax'
+  },
+   store: new pgSession({
       pool: pgPool,
       tableName: 'user_sessions',
       createTableIfMissing: true,
+      ttl:  60 * 60*1.5, // Session expiration time in seconds (1.5 hours)
+ 
       ttl:  60 * 60*1.5,
     })
-               
-  })
-); 
+
+}));
+
 app.use('/api',routes);
- 
- 
-// app.use((req,res,next)=>{
-//    if (!req.session.views) {
-//     req.session.views = 1;
-//   } else {
-//     req.session.views++;
-//   }
-//   console.log(`Session ID: ${req.session}, Views: ${req.session.views}`);
-//   next();
-// });
-
-// app.get('/test',(req,res)=>{
-//   res.send('Welcome to the Doctor Appointment Booking System');
-// })
-
-
 console.log('SERVER STARTED')
 
 console.log(process.env.RESEND_KEY)
