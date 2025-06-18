@@ -111,6 +111,7 @@ let User = {
         req.session.userID = jwttoken;
       }
       req.user= jwttoken
+      console.log(req.session,'SESSION');
       res.json({ token: jwttoken,roles:roles,email:email });
       console.log(match);
     } else {
@@ -120,7 +121,7 @@ let User = {
   auth: function (req, res, next) {
     // console.log(req);
     const token = req.header("X-Authorization");
-    console.log(token, "token");
+  console.log(token, "token",req.session,'SESSIONS');
     if(req.session.userID || token){
     jwt.verify(token || req.session.userID, process.env.SEC_KEY, (err, decoded) => {
       try {
@@ -129,7 +130,7 @@ let User = {
         // req.session.userID = decoded.userid;
         console.log("sessionID", req.session.userID);
         next();
-        }
+        } 
        else { 
         res.json({ error: "Invalid authorization", status: "401" });
         return;
