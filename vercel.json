@@ -1,0 +1,36 @@
+{
+    "routes": [
+    {
+      "src": "/src/(.*)",
+      "dest": "/src/$1"
+    },
+   
+      {
+      "src": "/(.*)",
+      "dest": "/src/config/$1"
+    },
+       {
+      "src": "/(.*)",
+      "dest": "/src/controller/$1"
+    },
+       {
+      "src": "/(.*)",
+      "dest": "/src/emails/$1"
+    },
+       {
+      "src": "/(.*)",
+      "dest": "/src/models/$1"
+    },
+       {
+      "src": "/(.*)",
+      "dest": "/src/routes/$1"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/src/index.html"
+    }
+  ]
+}

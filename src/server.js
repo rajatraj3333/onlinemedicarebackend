@@ -34,7 +34,7 @@ app.use(
     resave: false, 
     
     saveUninitialized: true,
-    cookie: { secure: true ,sameSite:'none'},
+    cookie: { secure: true },
     store: new pgSession({
       pool: pgPool,
       tableName: 'user_sessions',
