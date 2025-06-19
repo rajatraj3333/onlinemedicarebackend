@@ -468,7 +468,7 @@ async  verify(req,res){
      }
   },
   async getprofiledetails(req,res){
-    const {userid}=req.user
+    const {userid}=req?.user
    console.log(req.session)
     
   try {
