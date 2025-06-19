@@ -125,7 +125,7 @@ let User = {
     if(req.session.userID || token){
     jwt.verify(token || req.session.userID, process.env.SEC_KEY, (err, decoded) => {
       try {
-        if(req.session.userID){
+        if(req.session.userID || token){
         req.user=decoded;
         // req.session.userID = decoded.userid;
         console.log("sessionID", req.session.userID);
