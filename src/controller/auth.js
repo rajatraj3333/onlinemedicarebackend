@@ -24,6 +24,7 @@ let User = {
       department,
       lastdate,
       fees,
+      gender
     } = req.body;
     console.log("BODY->", req.body);
 
@@ -48,18 +49,18 @@ let User = {
       const time = roles != "Patient" ? joiningdate : "now()";
 
       let userResult = await pool.query(
-        `insert into users (user_id,name,fullname,email,roles,password,created_at)
-                            values($1,$2,$3,$4,$5,$6,$7) returning user_id `,
-        [uniqueId, name, fullname, email, roles, hashedpassword, time]
+        `insert into users (user_id,name,fullname,email,roles,password,created_at,gender)
+                            values($1,$2,$3,$4,$5,$6,$7,$8) returning user_id `,
+        [uniqueId, name, fullname, email, roles, hashedpassword, time,gender]
       );
 
   
 
       if (roles === "Doctor" || roles === 'Associate Doctor' || roles === 'Staff' || roles === 'Associate' ) {
         await pool.query(
-          `insert into doctor (doctor_id,user_id,name,fullname,department,joiningdate,lastdate,fees)
-             values($1,$2,$3,$4,$5,$6,$7,$8) returning doctor_id`,
-          [result.rows[1].user_id,uniqueId,name, fullname, department, time, lastdate, fees]
+          `insert into doctor (doctor_id,user_id,name,fullname,department,joiningdate,lastdate,fees,gender)
+             values($1,$2,$3,$4,$5,$6,$7,$8,$9) returning doctor_id`,
+          [result.rows[1].user_id,uniqueId,name, fullname, department, time, lastdate, fees,gender]
         );
       }
       await pool.query("COMMIT");
@@ -341,7 +342,7 @@ async  verify(req,res){
 
   },
   async adddoctor(req,res){
-      const {name,fullname,email,password,roles,department}=req.body
+      const {name,fullname,email,password,roles,department,gender}=req.body
       
       try {
           await Validation.validateAsync(req.body)
@@ -366,11 +367,11 @@ async  verify(req,res){
                    console.log([
                     user_id,name,fullname,email,hashedpassword,roles,department
                    ])
-                 let registration  = `insert into users (user_id,name,fullname,email,password,created_at,roles)
-                 values ($1,$2,$3,$4,$5,$6,$7)
+                 let registration  = `insert into users (user_id,name,fullname,email,password,created_at,roles,gender)
+                 values ($1,$2,$3,$4,$5,$6,$7,$8)
                  `
 
-                 let response = await pool.query(registration,[user_id,name,fullname,email,hashedpassword,'now()',roles])
+                 let response = await pool.query(registration,[user_id,name,fullname,email,hashedpassword,'now()',roles,gender])
         
                   if(response.rowCount){
                      const token = jwt.sign({ userid:user_id }, process.env.SEC_KEY, {
@@ -408,7 +409,10 @@ async  verify(req,res){
             department,
             lastdate,
             fees,
+            gender
           } = req.body;
+
+          console.log(req.body)
      try {
        await pool.query('BEGIN')
       let resultsql  = `select * from users where user_id=$1 and roles =$2 or roles =$3`
@@ -438,9 +442,9 @@ async  verify(req,res){
  
 
         let userResult = await pool.query(
-          `insert into users (user_id,name,fullname,email,roles,password,created_at)
-                              values($1,$2,$3,$4,$5,$6,$7) returning user_id `,
-          [uniqueId, name, fullname, email, roles, hashedpassword, 'now()']
+          `insert into users (user_id,name,fullname,email,roles,password,created_at,gender)
+                              values($1,$2,$3,$4,$5,$6,$7,$8) returning user_id `,
+          [uniqueId, name, fullname, email, roles, hashedpassword, 'now()',gender]
         );
 
       console.log(userResult);

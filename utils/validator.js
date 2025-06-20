@@ -56,6 +56,11 @@ const userValidationSchema = Joi.object({
     .messages({
         'string.empty': 'department cannot be empty',
     }),
+       gender: Joi.string()
+    .required()
+    .messages({
+        'string.empty': 'Gender cannot be empty',
+    })
 });
 
 const patientregister = Joi.object({
@@ -108,6 +113,11 @@ roles: Joi.string()
     .messages({
         'string.empty': 'roles cannot be empty',
     }),
+    gender: Joi.string()
+    .required()
+    .messages({
+        'string.empty': 'Gender cannot be empty',
+    })
 
 
 }) 
