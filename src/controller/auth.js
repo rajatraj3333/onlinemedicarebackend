@@ -127,12 +127,12 @@ let User = {
     jwt.verify(token || req.session.userID, process.env.SEC_KEY, (err, decoded) => {
       try {
         if(req.session.userID || token){
-        req.user=decoded;
+        req.user=decoded; 
         // req.session.userID = decoded.userid;
         console.log("sessionID", req.session.userID);
-        next();
+        next(); 
         } 
-       else { 
+       else {  
         res.json({ error: "Invalid authorization", status: "401" });
         return;
         }
@@ -200,6 +200,8 @@ let User = {
         res.json({ message:'something went wrong can not send otp on email' });
         await pool.query('ROLLBACK');
        }
+
+          res.json({status:200,message:'Otp Send to Register Email Check Inbox/Spam' });
           }
           // console.log(result);
         }
