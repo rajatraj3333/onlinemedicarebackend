@@ -15,12 +15,12 @@ const Doctor = {
     const { slottime, doctor_id, payment_status, email, date, mode } = req.body;
     // let time = dayjs(date).subtract(1, "D");
     // console.log(time.format("DD-MM-YYYY"), date);
-
+  
     //    let formatteddate =date.split('/') ;
     // let formatedday =  formatteddate.length && formatteddate[0]?.length<2?+"0"+formatteddate[0]:formatteddate[0]
     // let formatedmonth = formatteddate.length && formatteddate[1]?.length<2?+"0"+formatteddate[1]:formatteddate[1]
     // let formattedyear = formatteddate.length  && formatteddate[2]
-    // // let afterformated =  `${formatedday}-${formatedmonth}-${formattedyear}`
+    // // let afterformated =  `${formatedday}-${formatedmonth}-${formattedyear}` 
     // let afterformated =  new Date(formattedyear,formatedmonth-1,formatedday+1).toISOString()
 
     // console.log(afterformated,"AFTER")
@@ -167,9 +167,9 @@ inner join doctor d  on u.user_id = d.user_id
     let formatedday =
       formatteddate.length && formatteddate[2]?.length < 2
         ? +"0" + formatteddate[2]
-        : formatteddate[2];
+        : formatteddate[2];  
     let formatedmonth =
-      formatteddate.length && formatteddate[1]?.length < 2
+      formatteddate.length && formatteddate[1]?.length < 2 
         ? +"0" + formatteddate[1]
         : formatteddate[1];
     let formattedyear = formatteddate.length && formatteddate[0];
@@ -310,6 +310,11 @@ order by  booking_date desc
 
         let differenceInDays = 0;
 
+        console.log(month,'BookMonth')
+        console.log(day,'BookDay')
+        console.log(todaymonth,'TodayMonth')
+        console.log(todayday,'TodayDay')
+
         if (month === todaymonth) {
           if (todayday >= day) {
             res.status(200).json({ error: "booking can not cancelled" });
@@ -329,6 +334,8 @@ order by  booking_date desc
           "cancelled",
           booking_id,
         ]);
+
+        console.log(updateresult,'UPDATERESULT')
         if ((await updateresult).rowCount) {
           res.status(200).json({ response: "booking  cancelled" });
         }
