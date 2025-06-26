@@ -278,7 +278,7 @@ where p.patient_id  = $1
 order by  booking_date desc
 `;
       let getpatientdetails = await pool.query(getdetailssql, [userid]);
-      console.log(userid, getpatientdetails);
+      // console.log(userid, getpatientdetails);
       if (getpatientdetails.rowCount) {
         res.json({ response: getpatientdetails.rows, status: 200 });
       }
@@ -299,14 +299,21 @@ order by  booking_date desc
       let statement1 = `select booking_date from patient where booking_id = $1`;
 
       let result = await pool.query(statement1, [booking_id]);
-      if (result.rowCount) {
+      console.log(result,'SELECT BOOK_DATE');
+
+console.log(new Date(result.rows[0].booking_date).toLocaleDateString().split('/'))
+     
+
+if (result.rowCount) {
         let data = result.rows[0].booking_date;
 
-        let extractdate = new Date(data).toLocaleDateString().split("/");
+// [ '30', '6', '2025' ]
+let formatteddate = new Date(result.rows[0].booking_date).toLocaleDateString().split('/');
 
-        let day = +extractdate[0];
-        let month = +extractdate[1];
-        let year = +extractdate[2];
+
+        let day = +formatteddate[0];
+        let month = +formatteddate[1];
+        let year = +formatteddate[2];
 
         let differenceInDays = 0;
 
@@ -330,7 +337,7 @@ order by  booking_date desc
       returning booking_id
       `;
 
-        let updateresult = pool.query(updatestatussql, [
+        let updateresult = await pool.query(updatestatussql, [
           "cancelled",
           booking_id,
         ]);
