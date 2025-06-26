@@ -310,12 +310,11 @@ if (result.rowCount) {
 // [ '30', '6', '2025' ]
 let formatteddate = new Date(result.rows[0].booking_date).toLocaleDateString().split('/');
 
+// for production month,day,year
 
-        let day = +formatteddate[0];
-        let month = +formatteddate[1];
+        let day = process.env.NODE_ENV==='development'?+formatteddate[0]:formatteddate[1];
+        let month = process.env.NODE_ENV==='development'?+formatteddate[1]:formatteddate[0];
         let year = +formatteddate[2];
-
-        let differenceInDays = 0;
 
         console.log(month,'BookMonth')
         console.log(day,'BookDay')
