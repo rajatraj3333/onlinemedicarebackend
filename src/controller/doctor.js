@@ -8,6 +8,7 @@ const BookingEmail = require("../emails/bookingstatusemail");
 const { Resend } = require("resend");
 const ResendEmail = require("../emails/config");
 const generateNumber = require("../../utils/uniquegen");
+const PORT = process.env.PORT
 const Doctor = {
   async booking(req, res) {
     console.log("booking");
@@ -484,6 +485,36 @@ console.log(result);
       } catch (error) {
         
       }
+  },
+  async fileupload(req,res){
+    console.log('FILE--UPLOAD')
+try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'File uploaded successfully',
+      file: {
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        path: req.file.path,
+        url: `http://localhost:${PORT}/uploads/${req.file.filename}`
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Upload failed',
+      error: error.message
+    });
+  }
   }
 };
 

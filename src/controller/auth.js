@@ -225,7 +225,7 @@ let User = {
     try {
       let getuserid= await pool.query(`select user_id from users where email ilike $1`,[email])
       const { user_id } = getuserid.rows[0];
-      console.log(user_id)
+      console.log(user_id,'USERID')
       if(user_id){
       
       pool.query('BEGIN')
@@ -233,7 +233,7 @@ let User = {
         `select otp,user_id from otpverify where user_id=$1 and otp=$2`,
         [user_id, Number(otp)]
       );
-     
+    //  console.log(response)
       if (response.rowCount) {
        
         const { otp, user_id } = response.rows[0];
