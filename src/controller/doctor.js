@@ -286,11 +286,7 @@ order by  booking_date desc
     } catch (error) {}
   },
   async cancelappointment(req, res) {
-    const { booking_id, date } = req.body;
-
-    let todayday = +date?.split("/")[0];
-    let todaymonth = +date?.split("/")[1];
-    let todayyear = +date?.split("/")[2];
+    const { booking_id } = req.body;
 
     try {
       const { userid } = req.user;
@@ -308,31 +304,22 @@ console.log(new Date(result.rows[0].booking_date).toLocaleDateString().split('/'
 if (result.rowCount) {
         let data = result.rows[0].booking_date;
 
-// [ '30', '6', '2025' ]
-let formatteddate = new Date(result.rows[0].booking_date).toLocaleDateString().split('/');
+const msinDay = 1000*60*60;
+const booking_date_ms = new Date(result.rows[0].booking_date)
+const todayms = new Date ();
+
+const timeindays = Math.floor((booking_date_ms-todayms)/msinDay)
 
 // for production month,day,year
 
-        let day = process.env.NODE_ENV==='development'?+formatteddate[0]:formatteddate[1];
-        let month = process.env.NODE_ENV==='development'?+formatteddate[1]:formatteddate[0];
-        let year = +formatteddate[2];
 
-        console.log(month,'BookMonth')
-        console.log(day,'BookDay')
-        console.log(todaymonth,'TodayMonth')
-        console.log(todayday,'TodayDay')
-
-        if (month === todaymonth) {
-          if (todayday >= day) {
+       
+          if (timeindays<=0) {
             res.status(200).json({ error: "booking can not cancelled" });
             return;
           }
-        }
-        if (Math.max(todaymonth, month) - Math.min(todaymonth, month) > 1) {
-          res.status(200).json({ error: "booking can not cancelled" });
-          return;
-        }
-
+        
+    
         let updatestatussql = `update patient set booking_status =$1 where booking_id=$2
       returning booking_id
       `;
@@ -495,8 +482,8 @@ try {
         message: 'No file uploaded'
       });
     }
-
-    res.json({
+ 
+    res.json({ 
       success: true,
       message: 'File uploaded successfully',
       file: {
