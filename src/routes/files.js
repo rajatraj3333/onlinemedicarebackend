@@ -90,14 +90,14 @@ router.post('/updatefile',async(req,res)=>{
         console.log(req.body);
         let sqlStatement = `update patient set filename =$1 where booking_id =$2`
       let result = await pool.query(sqlStatement,[filename,booking_id])
-      console.log(result);
+     if(result.rowCount) res.status(200).send({message:'updated Successfully'})
     } catch (error) {
         res.status(400).json({error:'cant update right now'})
     }
-
+ 
      
 
-})
+}) 
      
  
 module.exports=router;
